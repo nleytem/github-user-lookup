@@ -6,7 +6,7 @@ import com.nmleytem.githubuserlookup.models.GitHubRepoInformation;
 import com.nmleytem.githubuserlookup.models.GitHubUserInformation;
 import com.nmleytem.githubuserlookup.repositories.models.GitHubUserReposResponse;
 import com.nmleytem.githubuserlookup.repositories.models.GitHubUserResponse;
-import com.nmleytem.githubuserlookup.repositories.GitHubUserRepository;
+import com.nmleytem.githubuserlookup.repositories.GitHubUserRepositoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -21,10 +21,9 @@ import java.time.format.DateTimeFormatter;
  */
 @Service
 public class GitHubUserService {
-    private final Logger logger = LoggerFactory.getLogger(GitHubUserService.class);
-    GitHubUserRepository gitHubUserRepository;
+    GitHubUserRepositoryImpl gitHubUserRepository;
 
-    public GitHubUserService(GitHubUserRepository userRepository) {
+    public GitHubUserService(GitHubUserRepositoryImpl userRepository) {
         gitHubUserRepository = userRepository;
     }
 
