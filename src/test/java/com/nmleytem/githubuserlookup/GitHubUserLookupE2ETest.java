@@ -59,6 +59,8 @@ class GitHubUserLookupE2ETest {
         HttpEntity reposEntity = new StringEntity("""
                 [
                     {
+                        "id": "id",
+                        "other_stuff": "Doesn't matter",
                         "url": "http://repo1",
                         "name": "repo1"
                     }
@@ -84,6 +86,7 @@ class GitHubUserLookupE2ETest {
                 .andExpect(jsonPath("$.user_name").value("testuser"))
                 .andExpect(jsonPath("$.display_name").value("Test User"))
                 .andExpect(jsonPath("$.created_at").value("Sun, 1 Jan 2023 12:00:00 GMT"))
+                .andExpect(jsonPath("$.geo_location").value("Test Location"))
                 .andExpect(jsonPath("$.repos[0].name").value("repo1"));
     }
 
