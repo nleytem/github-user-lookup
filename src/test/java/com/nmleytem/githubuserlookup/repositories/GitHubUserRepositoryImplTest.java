@@ -1,5 +1,6 @@
 package com.nmleytem.githubuserlookup.repositories;
 
+import com.nmleytem.githubuserlookup.exceptions.RateLimitException;
 import com.nmleytem.githubuserlookup.exceptions.UserNotFoundException;
 import com.nmleytem.githubuserlookup.repositories.models.GitHubUserReposResponse;
 import com.nmleytem.githubuserlookup.repositories.models.GitHubUserResponse;
@@ -9,6 +10,7 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +40,11 @@ class GitHubUserRepositoryImplTest {
         
         when(response.getEntity()).thenReturn(entity);
         when(response.getCode()).thenReturn(200);
-        when(httpClient.execute(any(ClassicHttpRequest.class), any(HttpCacheContext.class))).thenReturn(response);
+        when(httpClient.execute(any(ClassicHttpRequest.class), any(HttpCacheContext.class), any(HttpClientResponseHandler.class)))
+                .thenAnswer(invocation -> {
+                    HttpClientResponseHandler<?> handler = invocation.getArgument(2);
+                    return handler.handleResponse(response);
+                });
 
         GitHubUserResponse result = repository.getGitHubUserData(username);
 
@@ -52,7 +58,11 @@ class GitHubUserRepositoryImplTest {
         CloseableHttpResponse response = mock(CloseableHttpResponse.class);
         
         when(response.getCode()).thenReturn(404);
-        when(httpClient.execute(any(ClassicHttpRequest.class), any(HttpCacheContext.class))).thenReturn(response);
+        when(httpClient.execute(any(ClassicHttpRequest.class), any(HttpCacheContext.class), any(HttpClientResponseHandler.class)))
+                .thenAnswer(invocation -> {
+                    HttpClientResponseHandler<?> handler = invocation.getArgument(2);
+                    return handler.handleResponse(response);
+                });
 
         assertThrows(UserNotFoundException.class, () -> repository.getGitHubUserData(username));
     }
@@ -72,12 +82,38 @@ class GitHubUserRepositoryImplTest {
 
         when(response.getEntity()).thenReturn(entity);
         when(response.getCode()).thenReturn(200);
-        when(httpClient.execute(any(ClassicHttpRequest.class), any(HttpCacheContext.class))).thenReturn(response);
+        when(httpClient.execute(any(ClassicHttpRequest.class), any(HttpCacheContext.class), any(HttpClientResponseHandler.class)))
+                .thenAnswer(invocation -> {
+                    HttpClientResponseHandler<?> handler = invocation.getArgument(2);
+                    return handler.handleResponse(response);
+                });
 
         GitHubUserReposResponse result = repository.getGitHubUserRepos(username);
 
         assertNotNull(result);
         assertEquals(1, result.repos().size());
         assertEquals("repo1", result.repos().get(0).name());
+    }
+
+    @Test
+    void getGitHubUserRepos_NotFound() throws IOException {
+        String username = "testuser";
+        CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getCode()).thenReturn(404);
+        when(httpClient.execute(any(ClassicHttpRequest.class), any(HttpCacheContext.class),any(HttpClientResponseHandler.class)))
+                .thenThrow(new UserNotFoundException("User not found"));
+
+        assertThrows(UserNotFoundException.class, () -> repository.getGitHubUserRepos(username));
+    }
+
+    @Test
+    void getGitHubUserRepos_RateLimited() throws IOException {
+        String username = "testuser";
+        CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getCode()).thenReturn(403);
+        when(httpClient.execute(any(ClassicHttpRequest.class), any(HttpCacheContext.class),any(HttpClientResponseHandler.class)))
+                .thenThrow(RateLimitException.class);
+
+        assertThrows(RateLimitException.class, () -> repository.getGitHubUserRepos(username));
     }
 }

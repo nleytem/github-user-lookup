@@ -19,6 +19,11 @@ A Spring Boot application that retrieves and aggregates GitHub user profile info
 - Springdoc OpenAPI (Swagger UI)
 - Maven
 
+## Dependency Choices
+This project relies mostly on the Spring Boot framework itself, with the notable exception of
+explicitly using the Apache HttpClient, mostly because it's what I'm most familiar with. Using the Spring Boot framework
+libraries aids in quick development and cuts down on configuration.
+
 ## Prerequisites
 
 - JDK 25 or higher
@@ -47,6 +52,13 @@ Run the Spring Boot application using the Maven wrapper:
 
 ```bash
 ./mvnw spring-boot:run
+```
+
+### Test the Application
+
+Run the tests by using the Maven wrapper:
+```bash
+./mvnw test
 ```
 
 By default, the server will start on port `8000`. This can be configured in `src/main/resources/application.properties`.
@@ -111,4 +123,15 @@ Key application properties are found in `src/main/resources/application.properti
 - **`GitHubUserService`**: Contains business logic, orchestrating calls to fetch both user data and repositories, and formatting data like the `createdAt` date.
 - **`GitHubUserRepository`**: Handles HTTP requests to the GitHub API, managing the Apache HTTP Client and caching strategies to minimize redundant network calls.
 
-The application includes custom exceptions `UserNotFoundException` (returns a 404 status when a GitHub user does not exist) and `InternalServerError` for API communication issues.
+The application includes custom exceptions `UserNotFoundException` (returns a 404 status when a GitHub user does not exist) and `InternalServerError` for API communication issues, 
+and `RateLimitException` (returns a 403) when GitHub rate limits the application.
+
+## Future Considerations
+Things I would change with more time:
+- I would make the error handling more robust and custom. I would add more details to messages. 
+- I would add a more robust caching solution to avoid rate limits from bad requests. 
+  - The caching is leveraging built-in Apache Client caching which utilizes ETAGs and Last Modified Dates.
+  - This is less customizable than a dedicated caching solution, and it does not help with bad request responses, but it automatically handles 304s that the GitHub API returns.
+- I would consider modularization for future separation of concerns
+- Containerization to make this easier to use on Kubernetes or with docker compose
+

@@ -7,8 +7,6 @@ import com.nmleytem.githubuserlookup.models.GitHubUserInformation;
 import com.nmleytem.githubuserlookup.repositories.models.GitHubUserReposResponse;
 import com.nmleytem.githubuserlookup.repositories.models.GitHubUserResponse;
 import com.nmleytem.githubuserlookup.repositories.GitHubUserRepositoryImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -35,8 +33,9 @@ public class GitHubUserService {
      * @return A {@link GitHubUserInformation} containing aggregated user data.
      * @throws UserNotFoundException If the GitHub user does not exist.
      * @throws InternalServerError If there is an issue communicating with the GitHub API.
+     * @throws com.nmleytem.githubuserlookup.exceptions.RateLimitException if GitHub returns a 403.
      */
-    public GitHubUserInformation getUserData(String username) throws UserNotFoundException, InternalServerError {
+    public GitHubUserInformation getUserData(String username) throws RuntimeException {
         GitHubUserResponse userResponse = gitHubUserRepository.getGitHubUserData(username);
         GitHubUserReposResponse reposResponse = gitHubUserRepository.getGitHubUserRepos(username);
         var repos = reposResponse
@@ -48,7 +47,7 @@ public class GitHubUserService {
         OffsetDateTime date = OffsetDateTime.parse(userResponse.createdAt(), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         String formattedDate = date.format(DateTimeFormatter.RFC_1123_DATE_TIME);
 
-        // Create a builder or serializer
+        // Custom serialization could be preferable here. Or a builder.
         return new GitHubUserInformation(
                 userResponse.login(),
                 userResponse.name(),

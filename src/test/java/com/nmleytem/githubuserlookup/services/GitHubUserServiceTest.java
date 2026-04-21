@@ -1,6 +1,7 @@
 package com.nmleytem.githubuserlookup.services;
 
 import com.nmleytem.githubuserlookup.exceptions.InternalServerError;
+import com.nmleytem.githubuserlookup.exceptions.RateLimitException;
 import com.nmleytem.githubuserlookup.exceptions.UserNotFoundException;
 import com.nmleytem.githubuserlookup.models.GitHubUserInformation;
 import com.nmleytem.githubuserlookup.repositories.GitHubUserRepositoryImpl;
@@ -67,5 +68,13 @@ class GitHubUserServiceTest {
         when(userRepository.getGitHubUserData(username)).thenThrow(new InternalServerError("Internal server error"));
 
         assertThrows(InternalServerError.class, () -> userService.getUserData(username));
+    }
+
+    @Test
+    void getUserData_RatedLimited() {
+        String username = "erroruser";
+        when(userRepository.getGitHubUserData(username)).thenThrow(new RateLimitException(("Rate limited")));
+
+        assertThrows(RateLimitException.class, () -> userService.getUserData(username));
     }
 }

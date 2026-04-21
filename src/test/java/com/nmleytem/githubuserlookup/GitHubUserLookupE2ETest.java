@@ -7,6 +7,7 @@ import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpStatus;
+import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,8 +68,16 @@ class GitHubUserLookupE2ETest {
         when(reposResponse.getCode()).thenReturn(200);
 
         // Configure mock client to return these responses
-        // GitHubUserRepositoryImpl calls httpClient.execute(httpGet, cacheContext)
-        when(httpClient.execute(any(ClassicHttpRequest.class), any(HttpCacheContext.class))).thenReturn(userResponse).thenReturn(reposResponse);
+        // GitHubUserRepositoryImpl calls httpClient.execute(httpGet, cacheContext, responseHandler)
+        when(httpClient.execute(any(ClassicHttpRequest.class), any(HttpCacheContext.class), any(HttpClientResponseHandler.class)))
+                .thenAnswer(invocation -> {
+                    HttpClientResponseHandler<?> handler = invocation.getArgument(2);
+                    return handler.handleResponse(userResponse);
+                })
+                .thenAnswer(invocation -> {
+                    HttpClientResponseHandler<?> handler = invocation.getArgument(2);
+                    return handler.handleResponse(reposResponse);
+                });
 
         mockMvc.perform(get("/users/{username}", username))
                 .andExpect(status().isOk())
@@ -77,4 +86,5 @@ class GitHubUserLookupE2ETest {
                 .andExpect(jsonPath("$.created_at").value("Sun, 1 Jan 2023 12:00:00 GMT"))
                 .andExpect(jsonPath("$.repos[0].name").value("repo1"));
     }
+
 }

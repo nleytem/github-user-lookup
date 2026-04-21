@@ -1,5 +1,6 @@
 package com.nmleytem.githubuserlookup.controllers;
 
+import com.nmleytem.githubuserlookup.exceptions.RateLimitException;
 import com.nmleytem.githubuserlookup.exceptions.UserNotFoundException;
 import com.nmleytem.githubuserlookup.models.GitHubUserInformation;
 import com.nmleytem.githubuserlookup.services.GitHubUserService;
@@ -48,4 +49,15 @@ class UserControllerTest {
         mockMvc.perform(get("/users/{username}", username))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void getUser_RateLimited() throws Exception {
+        String username = "ratelimiter";
+
+        when(userService.getUserData(username)).thenThrow(new RateLimitException("Rate limited"));
+
+        mockMvc.perform(get("/users/{username}", username))
+                .andExpect(status().isForbidden());
+    }
+
 }
